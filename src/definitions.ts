@@ -14,6 +14,8 @@ export interface BarcodeScannerPlugin {
   disableTorch(): Promise<void>;
   toggleTorch(): Promise<void>;
   getTorchState(): Promise<TorchStateResult>;
+  rotate(): Promise<IScanResultWithContent | null>;
+  devices(): Promise<MediaDeviceInfo[]>;
 }
 
 const _SupportedFormat = {
@@ -116,7 +118,7 @@ export interface ScanOptions {
   /**
    * This parameter can be used to set the desired camera ID.
    */
-  cameraId: string;
+  cameraId?: string;
 }
 
 export interface StopScanOptions {

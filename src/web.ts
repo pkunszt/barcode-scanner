@@ -25,6 +25,7 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
   private _options: ScanOptions | null = null;
   private _backgroundColor: string | null = null;
   private _stream: MediaStream | null = null;
+  private _deviceIds: string[] = [];
   private _constraints: MediaStreamConstraints = BarcodeScannerWeb._DefaultConstraint;
 
   async prepare(): Promise<void> {
@@ -65,17 +66,19 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
     if (!!_options.cameraId) {
       this._constraints = {video: {deviceId: _options.cameraId}};
     }
+    this._deviceIds = (await this.devices()).map(x => x.deviceId);
     return this._startScan();
   }
 
   async rotate() {
     const track = this._stream?.getTracks()[0];
     if (!track) {
-      return;
+      return null;
     }
 
     const constraint = track.getConstraints();
     let facing = constraint.facingMode;
+    let devId = constraint.deviceId;
 
     if (!facing) {
       const cap = track.getCapabilities();
@@ -83,13 +86,24 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
         facing = cap.facingMode[0];
       }
     }
+    if (!devId) {
+      const cap = track.getCapabilities();
+      if (cap.deviceId) {
+        devId = cap.deviceId;
+      }
+    }
 
-    if (facing === 'environment') {
-      this._constraints = BarcodeScannerWeb._FrontFacingConstraint;
-    } else if (facing === 'user') {
-      this._constraints = BarcodeScannerWeb._RearFacingConstraint;
+    if (!devId) {
+      if (facing === 'environment') {
+        this._constraints = BarcodeScannerWeb._FrontFacingConstraint;
+      } else if (facing === 'user') {
+        this._constraints = BarcodeScannerWeb._RearFacingConstraint;
+      } else {
+        return null;
+      }
     } else {
-      return;
+      const idx = this._deviceIds.findIndex(d => d === devId);
+      this._constraints = {video: {deviceId: this._deviceIds[(idx === this._deviceIds.length - 1) ? 0 : idx + 1]}}
     }
 
     await this._stopScan();
