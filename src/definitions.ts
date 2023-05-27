@@ -112,6 +112,11 @@ export interface ScanOptions {
    * @since 2.1.0
    */
   cameraDirection?: CameraDirection;
+
+  /**
+   * This parameter can be used to set the desired camera ID.
+   */
+  cameraId: string;
 }
 
 export interface StopScanOptions {

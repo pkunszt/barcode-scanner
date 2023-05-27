@@ -15,12 +15,17 @@ import {
 } from './definitions';
 
 export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin {
+  private static _DefaultConstraint: MediaStreamConstraints = {video: {}};
+  private static _FrontFacingConstraint: MediaStreamConstraints = {video: {facingMode: 'user'}};
+  private static _RearFacingConstraint: MediaStreamConstraints = {video: {facingMode: 'environment'}};
   private _formats: number[] = [];
   private _controls: IScannerControls | null = null;
   private _torchState = false;
   private _video: HTMLVideoElement | null = null;
   private _options: ScanOptions | null = null;
   private _backgroundColor: string | null = null;
+  private _stream: MediaStream | null = null;
+  private _constraints: MediaStreamConstraints = BarcodeScannerWeb._DefaultConstraint;
 
   async prepare(): Promise<void> {
     await this._getVideoElement();
@@ -49,6 +54,49 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
         console.error(format, 'is not supported on web');
       }
     });
+    if (!!_options.cameraDirection) {
+      if (_options.cameraDirection === CameraDirection.FRONT) {
+        this._constraints = BarcodeScannerWeb._FrontFacingConstraint;
+      }
+      if (_options.cameraDirection === CameraDirection.BACK) {
+        this._constraints = BarcodeScannerWeb._RearFacingConstraint;
+      }
+    }
+    if (!!_options.cameraId) {
+      this._constraints = {video: {deviceId: _options.cameraId}};
+    }
+    return this._startScan();
+  }
+
+  async rotate() {
+    const track = this._stream?.getTracks()[0];
+    if (!track) {
+      return;
+    }
+
+    const constraint = track.getConstraints();
+    let facing = constraint.facingMode;
+
+    if (!facing) {
+      const cap = track.getCapabilities();
+      if (cap.facingMode) {
+        facing = cap.facingMode[0];
+      }
+    }
+
+    if (facing === 'environment') {
+      this._constraints = BarcodeScannerWeb._FrontFacingConstraint;
+    } else if (facing === 'user') {
+      this._constraints = BarcodeScannerWeb._RearFacingConstraint;
+    } else {
+      return;
+    }
+
+    await this._stopScan();
+    return this._startScan();
+  }
+
+  private async _startScan() {
     const video = await this._getVideoElement();
     if (video) {
       return await this._getFirstResultFromReader();
@@ -73,10 +121,23 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
   }
 
   async stopScan(_options?: StopScanOptions): Promise<void> {
-    this._stop();
+    return this._stopScan();
+  }
+
+  private async _stopScan(){
+    await this._stop();
     if (this._controls) {
       this._controls.stop();
       this._controls = null;
+    }
+  }
+
+  async devices(): Promise<MediaDeviceInfo[]> {
+    try {
+      const dev = await navigator.mediaDevices.enumerateDevices();
+      return dev.filter(d => d.kind == 'videoinput');
+    } catch(e) {
+      return [];
     }
   }
 
@@ -231,14 +292,13 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
         body.appendChild(parent);
 
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          const constraints: MediaStreamConstraints = {
-            video: {},
-          };
 
-          navigator.mediaDevices.getUserMedia(constraints).then(
+
+          navigator.mediaDevices.getUserMedia(this._constraints).then(
             (stream) => {
               //video.src = window.URL.createObjectURL(stream);
               if (this._video) {
+                this._stream = stream;
                 this._video.srcObject = stream;
                 this._video.play();
               }
