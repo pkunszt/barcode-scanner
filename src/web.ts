@@ -80,7 +80,7 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
       this._controls = null;
     }
     if (_options?.resolveScan && this._resolveScanFn) {
-      this._resolveScanFn();
+      this._resolveScanFn(_options.resolveContent ?? '');
     }
     this._resolveScanFn = null;
   }
@@ -181,10 +181,10 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
             console.error(error.message);
           }
         });
-        this._resolveScanFn = () => {
+        this._resolveScanFn = (content = '') => {
           resolve({
             hasContent: false,
-            content: '',
+            content,
             format: ''
           });
         }
