@@ -1,5 +1,5 @@
 import { WebPlugin } from '@capacitor/core';
-import { BarcodeFormat, BrowserQRCodeReader, IScannerControls } from '@zxing/browser';
+import { BarcodeFormat, BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
 import { DecodeHintType } from '@zxing/library';
 
 import {
@@ -170,7 +170,7 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
           hints = new Map();
           hints.set(DecodeHintType.POSSIBLE_FORMATS, this._formats);
         }
-        const reader = new BrowserQRCodeReader(hints);
+        const reader = new BrowserMultiFormatReader(hints);
         this._controls = await reader.decodeFromVideoElement(videoElement, (result, error, controls) => {
           if (!error && result && result.getText()) {
             resolve({
