@@ -25,7 +25,7 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
   private _backgroundColor: string | null = null;
   private _resolveScanFn: any = null;
   private _facingMode: MediaTrackConstraints = BarcodeScannerWeb._BACK;
-  private _currentDeviceId: ConstrainDOMString | undefined;
+  private _currentDeviceId: string = '';
 
   async prepare(): Promise<void> {
     await this._getVideoElement();
@@ -265,7 +265,7 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
           navigator.mediaDevices.getUserMedia(constraints).then(
             (stream) => {
               const tracks = (stream.getTracks() ?? [null])[0];
-              this._currentDeviceId = tracks?.getConstraints()?.deviceId;
+              this._currentDeviceId = tracks?.getConstraints()?.deviceId as string ?? '';
               //video.src = window.URL.createObjectURL(stream);
               if (this._video) {
                 this._video.srcObject = stream;

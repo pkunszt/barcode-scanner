@@ -14,6 +14,7 @@ export interface BarcodeScannerPlugin {
   disableTorch(): Promise<void>;
   toggleTorch(): Promise<void>;
   getTorchState(): Promise<TorchStateResult>;
+  currentDeviceId(): string;
 }
 
 const _SupportedFormat = {
