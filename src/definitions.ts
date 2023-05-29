@@ -124,6 +124,10 @@ export interface StopScanOptions {
    * @since 2.1.0
    */
   resolveScan?: boolean;
+  /**
+   * This parameter can be used to set a value in the resolver content returned.
+   */
+  resolveContent?: string;
 }
 
 export type ScanResult = IScanResultWithContent | IScanResultWithoutContent;
