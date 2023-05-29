@@ -112,6 +112,7 @@ export interface ScanOptions {
    * @since 2.1.0
    */
   cameraDirection?: CameraDirection;
+  deviceId?: string;
 }
 
 export interface StopScanOptions {

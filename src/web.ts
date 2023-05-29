@@ -25,6 +25,7 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
   private _backgroundColor: string | null = null;
   private _resolveScanFn: any = null;
   private _facingMode: MediaTrackConstraints = BarcodeScannerWeb._BACK;
+  private _currentDeviceId: ConstrainDOMString | undefined;
 
   async prepare(): Promise<void> {
     await this._getVideoElement();
@@ -56,6 +57,9 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
     if (!!_options?.cameraDirection) {
       this._facingMode = _options.cameraDirection === CameraDirection.BACK ? BarcodeScannerWeb._BACK : BarcodeScannerWeb._FORWARD;
     }
+    if (!!_options?.deviceId) {
+      this._facingMode = { deviceId: _options.deviceId };
+    }
     const video = await this._getVideoElement();
     if (video) {
       return await this._getFirstResultFromReader();
@@ -73,6 +77,10 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
       this._controls.stop();
       this._controls = null;
     }
+  }
+
+  currentDeviceId() {
+    return this._currentDeviceId;
   }
 
   async resumeScanning(): Promise<void> {
@@ -256,6 +264,8 @@ export class BarcodeScannerWeb extends WebPlugin implements BarcodeScannerPlugin
 
           navigator.mediaDevices.getUserMedia(constraints).then(
             (stream) => {
+              const tracks = (stream.getTracks() ?? [null])[0];
+              this._currentDeviceId = tracks?.getConstraints()?.deviceId;
               //video.src = window.URL.createObjectURL(stream);
               if (this._video) {
                 this._video.srcObject = stream;
